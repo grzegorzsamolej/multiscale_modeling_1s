@@ -1,17 +1,18 @@
 ﻿using System;
-using System.Drawing;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
 namespace CellularAutomaton
 {
-    //TODO
-    //1. Reset UI textbox values if value is outside allowed range. It's is checked at code so it will not cause exception, but values in view are not refreshed
     public partial class MainWindow : Window
     {
         private Drawing _drawing;
         private Grid _grid;
+        private CancellationTokenSource _source = new CancellationTokenSource();
+        private CancellationToken _token;
 
         public MainWindow()
         {
@@ -26,11 +27,19 @@ namespace CellularAutomaton
             DrawGrid(null, null);
 
             SizeChanged += DrawGrid;
-            xCount.TextChanged += RefreshGrid;
-            yCount.TextChanged += RefreshGrid;
+            xCount.ValueChanged += RefreshGrid;
+            yCount.ValueChanged += RefreshGrid;
 
-            neighbourSeekRule.ItemsSource = Enum.GetValues(typeof(SeekMethod)).Cast<SeekMethod>();
-            neighbourSeekRule.SelectedIndex = 0;
+            generationRule.ItemsSource = Enum.GetValues(typeof(GenerationAlghorithm)).Cast<GenerationAlghorithm>();
+            generationRule.SelectedIndex = 0;
+
+            showGrid.Checked += ShowGrid_Checked;
+            showGrid.Unchecked += ShowGrid_Checked;
+        }
+
+        private void ShowGrid_Checked(object sender, RoutedEventArgs e)
+        {
+            _drawing.SwitchGrid(showGrid.IsChecked == true);
         }
 
         private void RefreshGrid(object sender, EventArgs e)
@@ -50,13 +59,7 @@ namespace CellularAutomaton
             gridPanel.Width = ImageCanvas.ActualWidth;
             gridPanel.Height = ImageCanvas.ActualHeight;
 
-            int.TryParse(xCount.Text, out var xCellCount);
-            int.TryParse(yCount.Text, out var yCellCount);
-
-            xCellCount = xCellCount < 3 ? 3 : xCellCount;
-            yCellCount = yCellCount < 3 ? 3 : yCellCount;
-
-            _drawing.SetGridParameters(xCellCount, yCellCount);
+            _drawing.SetGridParameters(xCount.Value.Value, yCount.Value.Value);
         }
 
         private void GridMouseClick(object sender, MouseButtonEventArgs e)
@@ -71,31 +74,51 @@ namespace CellularAutomaton
             {
                 _drawing.UpdateCell(cell, e.RightButton == MouseButtonState.Pressed);
                 _drawing.DrawGrid();
-
-                TestSeek(cell);
             }
         }
 
-        private void TestSeek(Cell cell)
+        private async void RunGeneration_Click(object sender, RoutedEventArgs e)
         {
-            var seeker = new NeighbourSeeker(_grid);
-            var neighbours = seeker.GetNeighbours(cell, openBorders.IsChecked == true, (SeekMethod)neighbourSeekRule.SelectedItem);
+            var openBorder = openBorders.IsChecked == true;
+            var rule = (GenerationAlghorithm)generationRule.SelectedItem;
+            var mutationProbabilityValue = mutationProbability.Value.Value;
 
-            foreach (var n in neighbours)
+            EnableControls(false);
+            stopGeneration.IsEnabled = true;
+
+            _token = _source.Token;
+            await Task.Run(() => RunGeneration(rule, openBorder, mutationProbabilityValue, _token), _token);
+
+            EnableControls(true);
+            stopGeneration.IsEnabled = false;
+            _source.Dispose();
+            _source = new CancellationTokenSource();
+        }        
+        
+        private void StopGeneration(object sender, RoutedEventArgs e)
+        {
+            if (_source != null)
             {
-                for (int x = 0; x < _grid.XSize; x++)
-                {
-                    for (int y = 0; y < _grid.YSize; y++)
-                    {
-                        if (_grid.GridContainer[x][y].X == n.X && _grid.GridContainer[x][y].Y == n.Y)
-                        {
-                            _grid.GridContainer[x][y].Color = Color.Aqua;
-                        }
-                    }
-                }
+                _source.Cancel();
             }
+        }
 
-            _drawing.DrawGrid();
+        private void EnableControls(bool enable)
+        {
+            runGeneration.IsEnabled = enable;
+            xCount.IsEnabled = enable;
+            yCount.IsEnabled = enable;
+            MaxStatesCount.IsEnabled = enable;
+            randomizeStatesBtn.IsEnabled = enable;
+            cleanGrid.IsEnabled = enable;
+            openBorders.IsEnabled = enable;
+            generationRule.IsEnabled = enable;
+        }
+
+        private void RunGeneration(GenerationAlghorithm alghorithm, bool openBorders, int mutationProbability, CancellationToken ct)
+        {
+            var processor = new Processor(_grid, _drawing, Dispatcher, openBorders, mutationProbability);
+            processor.Generate(alghorithm, ct);
         }
 
         private void RandomizeStates(object sender, RoutedEventArgs e)
@@ -104,12 +127,8 @@ namespace CellularAutomaton
             UpdateGridParameters();
 
             var rnd = new Random();
-            int.TryParse(MaxStatesCount.Text, out var maxState);
 
-            if (maxState < 1)
-            {
-                maxState = 1;
-            }
+            var maxState = MaxStatesCount.Value.Value;
 
             if (maxState > _grid.XSize * _grid.YSize)
             {

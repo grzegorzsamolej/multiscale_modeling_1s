@@ -51,12 +51,12 @@ namespace CellularAutomaton
                         y = j + cell.Y;
 
                         if (x < 0 || y < 0 || x >= _grid.XSize || y >= _grid.YSize)
-                            state = -1; //!!! For testing, should be 0 insted of -1
+                            state = 0;
                         else
                             state = _grid.GridContainer[x][y].State;
                     }
 
-                    if (state > -1) //!!! For testing, should be 0 insted of -1
+                    if (state > 0)
                     {
                         neighbours.Add(_grid.GridContainer[x][y]);
                     }
@@ -100,11 +100,11 @@ namespace CellularAutomaton
                     y = yPair + cell.Y;
 
                     if (x < 0 || y < 0 || x >= _grid.XSize || y >= _grid.XSize)
-                        state = -1; //!!! For testing, should be 0 insted of -1
+                        state = 0; //!!! For testing, should be 0 insted of -1
                     else
                         state = _grid.GridContainer[x][y].State;
                 }
-                if (state > -1) //!!! For testing, should be 0 insted of -1
+                if (state > 0)
                     neighbours.Add(_grid.GridContainer[x][y]);
             }
             return neighbours;

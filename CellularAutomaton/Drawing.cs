@@ -15,7 +15,7 @@ namespace CellularAutomaton
         private int _drawPanelWidth;
         private int _drawPanelHeight;
         private double _cellSize;
-        private const double CELL_PADDING = 1.0;
+        private double _cellPadding = 1.0;
 
         public Drawing(System.Windows.Controls.Image image, Grid grid)
         {
@@ -37,14 +37,20 @@ namespace CellularAutomaton
                     Rectangle rectangle = Rectangle.FromLTRB(
                         width,
                         height,
-                        (int)(((double)(cell.X + 1.0) * _cellSize) - CELL_PADDING),
-                        (int)(((double)(cell.Y + 1.0) * _cellSize) - CELL_PADDING)
+                        (int)(((double)(cell.X + 1.0) * _cellSize) - _cellPadding),
+                        (int)(((double)(cell.Y + 1.0) * _cellSize) - _cellPadding)
                         );
 
                     DrawRectangle(rectangle, cell.Color);
                 }
             }
             _drawingImage.Source = BitmapToBitmapImage(_bitmap);
+        }
+
+        public void SwitchGrid(bool show)
+        {
+            _cellPadding = show ? 1.0 : 0.0;
+            DrawGrid();
         }
 
         public void InvaildateGrid()

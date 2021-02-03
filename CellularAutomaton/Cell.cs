@@ -28,6 +28,13 @@ namespace CellularAutomaton
         public int X { get; private set; }
         public int Y { get; private set; }
         public Color Color { get; set; }
+        public bool StateChanged { get; set; }
+
+        public void SetState(int state)
+        {
+            _state = state;
+            StateChanged = true;
+        }
 
         public Cell(int x, int y)
         {
