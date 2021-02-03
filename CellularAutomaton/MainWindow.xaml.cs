@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Drawing;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 
@@ -26,6 +28,9 @@ namespace CellularAutomaton
             SizeChanged += DrawGrid;
             xCount.TextChanged += RefreshGrid;
             yCount.TextChanged += RefreshGrid;
+
+            neighbourSeekRule.ItemsSource = Enum.GetValues(typeof(SeekMethod)).Cast<SeekMethod>();
+            neighbourSeekRule.SelectedIndex = 0;
         }
 
         private void RefreshGrid(object sender, EventArgs e)
@@ -66,7 +71,31 @@ namespace CellularAutomaton
             {
                 _drawing.UpdateCell(cell, e.RightButton == MouseButtonState.Pressed);
                 _drawing.DrawGrid();
+
+                TestSeek(cell);
             }
+        }
+
+        private void TestSeek(Cell cell)
+        {
+            var seeker = new NeighbourSeeker(_grid);
+            var neighbours = seeker.GetNeighbours(cell, openBorders.IsChecked == true, (SeekMethod)neighbourSeekRule.SelectedItem);
+
+            foreach (var n in neighbours)
+            {
+                for (int x = 0; x < _grid.XSize; x++)
+                {
+                    for (int y = 0; y < _grid.YSize; y++)
+                    {
+                        if (_grid.GridContainer[x][y].X == n.X && _grid.GridContainer[x][y].Y == n.Y)
+                        {
+                            _grid.GridContainer[x][y].Color = Color.Aqua;
+                        }
+                    }
+                }
+            }
+
+            _drawing.DrawGrid();
         }
 
         private void RandomizeStates(object sender, RoutedEventArgs e)
