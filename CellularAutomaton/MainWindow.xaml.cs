@@ -13,6 +13,8 @@ namespace CellularAutomaton
         private Grid _grid;
         private CancellationTokenSource _source = new CancellationTokenSource();
         private CancellationToken _token;
+        private bool _isSimulationComplete;
+        private bool _bordersCalculated;
 
         public MainWindow()
         {
@@ -35,6 +37,8 @@ namespace CellularAutomaton
 
             showGrid.Checked += ShowGrid_Checked;
             showGrid.Unchecked += ShowGrid_Checked;
+
+            borderSize.ValueChanged += borderSize_ValueChanged;
         }
 
         private void ShowGrid_Checked(object sender, RoutedEventArgs e)
@@ -44,6 +48,8 @@ namespace CellularAutomaton
 
         private void RefreshGrid(object sender, EventArgs e)
         {
+            _isSimulationComplete = false;
+            _bordersCalculated = false;
             _drawing.InvaildateGrid();
             DrawGrid(sender, e);
         }
@@ -77,11 +83,19 @@ namespace CellularAutomaton
             }
         }
 
+
         private async void RunGeneration_Click(object sender, RoutedEventArgs e)
         {
+            if (_isSimulationComplete) 
+            {
+                return;
+            }
+            _isSimulationComplete = false;
+            _bordersCalculated = false;
             var openBorder = openBorders.IsChecked == true;
             var rule = (GenerationAlghorithm)generationRule.SelectedItem;
             var mutationProbabilityValue = mutationProbability.Value.Value;
+            var brSize = borderSize.Value.Value;
 
             EnableControls(false);
             stopGeneration.IsEnabled = true;
@@ -93,6 +107,12 @@ namespace CellularAutomaton
             stopGeneration.IsEnabled = false;
             _source.Dispose();
             _source = new CancellationTokenSource();
+            _isSimulationComplete = true;
+
+            if (showBorders.IsChecked == true)
+            {
+                DrawBorders();
+            }
         }        
         
         private void StopGeneration(object sender, RoutedEventArgs e)
@@ -113,6 +133,8 @@ namespace CellularAutomaton
             cleanGrid.IsEnabled = enable;
             openBorders.IsEnabled = enable;
             generationRule.IsEnabled = enable;
+            borderSize.IsEnabled = enable;
+            showBorders.IsEnabled = enable;
         }
 
         private void RunGeneration(GenerationAlghorithm alghorithm, bool openBorders, int mutationProbability, CancellationToken ct)
@@ -121,8 +143,28 @@ namespace CellularAutomaton
             processor.Generate(alghorithm, ct);
         }
 
+        private async void DrawBorders()
+        {
+            var openBorder = openBorders.IsChecked == true;
+            var brSize = borderSize.Value.Value;
+
+            EnableControls(false);
+
+            await Task.Run(() => {
+                var processor = new AdvancedProcessor(_grid, openBorder);
+                processor.CalculateBorders(brSize);
+            });
+
+            EnableControls(true);
+            _bordersCalculated = true;
+
+            _drawing.DrawGrid();
+        }
+
         private void RandomizeStates(object sender, RoutedEventArgs e)
         {
+            _isSimulationComplete = false;
+            _bordersCalculated = false;
             _drawing.InvaildateGrid();
             UpdateGridParameters();
 
@@ -148,6 +190,32 @@ namespace CellularAutomaton
                 }
             }
             _drawing.DrawGrid();
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            StopGeneration(null, null);
+        }
+
+        private void showBorders_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!_bordersCalculated && _isSimulationComplete)
+            {
+                DrawBorders();
+            }
+            _drawing.ShowBorders = showBorders.IsChecked == true;
+            _drawing.DrawGrid();
+        }
+
+        private void borderSize_ValueChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            _bordersCalculated = false;
+            if (!_isSimulationComplete || showBorders.IsChecked != true)
+            {
+                return;
+            }
+
+            DrawBorders();
         }
     }
 }

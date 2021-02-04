@@ -28,6 +28,44 @@ namespace CellularAutomaton
             }
         }
 
+        public List<Cell> GetAllNeighboursInRadius(Cell cell, bool openBorder, int radius)
+        {
+            List<Cell> neighbours = new List<Cell>();
+
+            for (int i = -radius; i <= radius; i++)
+            {
+                for (int j = -radius; j <= radius; j++)
+                {
+                    if (i == 0 && j == 0)
+                        continue;
+                    int x, y, state;
+                    if (openBorder)
+                    {
+                        x = (i + cell.X) >= 0 ? (i + cell.X) % (_grid.XSize) : (i + cell.X) + _grid.XSize;
+                        y = (j + cell.Y) >= 0 ? (j + cell.Y) % (_grid.YSize) : (j + cell.Y) + _grid.YSize;
+                        state = _grid.GridContainer[x][y].State;
+                    }
+                    else
+                    {
+                        x = i + cell.X;
+                        y = j + cell.Y;
+
+                        if (x < 0 || y < 0 || x >= _grid.XSize || y >= _grid.YSize)
+                            state = -2;
+                        else
+                            state = _grid.GridContainer[x][y].State;
+                    }
+
+                    if (state > -2)
+                    {
+                        neighbours.Add(_grid.GridContainer[x][y]);
+                    }
+                        
+                }
+            }
+            return neighbours;
+        }
+
         private List<Cell> GetNeighboursUsingRule1(Cell cell, bool openBorder)
         {
             List<Cell> neighbours = new List<Cell>();

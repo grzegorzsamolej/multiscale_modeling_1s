@@ -29,6 +29,7 @@ namespace CellularAutomaton
         public int Y { get; private set; }
         public Color Color { get; set; }
         public bool StateChanged { get; set; }
+        public bool IsBorder { get; set; }
 
         public void SetState(int state)
         {

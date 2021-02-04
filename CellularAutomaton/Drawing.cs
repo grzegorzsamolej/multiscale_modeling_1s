@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Windows.Media.Imaging;
@@ -16,6 +17,7 @@ namespace CellularAutomaton
         private int _drawPanelHeight;
         private double _cellSize;
         private double _cellPadding = 1.0;
+        public bool ShowBorders = false;
 
         public Drawing(System.Windows.Controls.Image image, Grid grid)
         {
@@ -41,7 +43,16 @@ namespace CellularAutomaton
                         (int)(((double)(cell.Y + 1.0) * _cellSize) - _cellPadding)
                         );
 
-                    DrawRectangle(rectangle, cell.Color);
+                    var color = ShowBorders && cell.IsBorder ? Color.Black : cell.Color;
+                    if (ShowBorders && cell.IsBorder)
+                    {
+                        DrawRectangle(rectangle);
+                    }
+                    else
+                    {
+                        DrawRectangle(rectangle, cell.Color);
+                    }
+                        
                 }
             }
             _drawingImage.Source = BitmapToBitmapImage(_bitmap);
@@ -118,6 +129,15 @@ namespace CellularAutomaton
         {
             Brush brush;
             brush = new SolidBrush(color);
+            _graphics.FillRectangle(
+                brush,
+                rectangle
+            );
+        }
+
+        private void DrawRectangle(Rectangle rectangle)
+        {
+            LinearGradientBrush brush = new LinearGradientBrush(rectangle, Color.Black, Color.Gray, 0, false);
             _graphics.FillRectangle(
                 brush,
                 rectangle
