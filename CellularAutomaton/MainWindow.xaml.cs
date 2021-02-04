@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
@@ -18,8 +17,10 @@ namespace CellularAutomaton
         private bool _isSimulationComplete;
         private bool _bordersCalculated;
         private Processor _processor;
+        private AdvancedProcessor _advancedProcessor;
         private int _dualPhaseState;
         private Color _dualPhaseColor;
+        private bool _borderSelection;
 
         public MainWindow()
         {
@@ -49,6 +50,7 @@ namespace CellularAutomaton
             borderSize.ValueChanged += borderSize_ValueChanged;
 
             _processor = new Processor(_grid, _drawing, Dispatcher);
+            _advancedProcessor = new AdvancedProcessor(_grid);
         }
 
         private void ShowGrid_Checked(object sender, RoutedEventArgs e)
@@ -89,6 +91,16 @@ namespace CellularAutomaton
 
             if (_isSimulationComplete && cell != null && e.LeftButton == MouseButtonState.Pressed)
             {
+                if (_borderSelection)
+                {
+                    _advancedProcessor.CalculateBorderForArea(cell, openBorders.IsChecked == true);
+                    _bordersCalculated = true;
+                    showBorders.IsChecked = true;
+                    _drawing.DrawGrid();
+                    _borderSelection = false;
+                return;
+                }
+
                 int state = cell.State;
                 if (_dualPhaseState < 1)
                 {
@@ -239,8 +251,7 @@ namespace CellularAutomaton
             EnableControls(false);
 
             await Task.Run(() => {
-                var processor = new AdvancedProcessor(_grid, openBorder);
-                processor.CalculateBorders(brSize);
+                _advancedProcessor.CalculateBorders(brSize, openBorder);
             });
 
             EnableControls(true);
@@ -284,6 +295,11 @@ namespace CellularAutomaton
             }
 
             DrawBorders();
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            _borderSelection = true;
         }
     }
 }

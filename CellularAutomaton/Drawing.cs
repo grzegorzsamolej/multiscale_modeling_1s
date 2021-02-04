@@ -52,7 +52,6 @@ namespace CellularAutomaton
                     }
                     Rectangle rectangle = Rectangle.FromLTRB(left,top,right,bottom);
 
-                    var color = ShowBorders && cell.IsBorder ? Color.Black : cell.Color;
                     if (ShowBorders && cell.IsBorder)
                     {
                         DrawRectangle(rectangle);

@@ -32,6 +32,7 @@
             <Label Content="BorderSize" HorizontalAlignment="Left" Margin="664,66,0,0" VerticalAlignment="Top"/>
             <ComboBox x:Name="secondPhaseMethod" HorizontalAlignment="Left" Margin="894,8,0,0" VerticalAlignment="Top" Width="96"/>
             <Label Content="Second phase method" HorizontalAlignment="Left" Margin="760,6,0,0" VerticalAlignment="Top"/>
+            <Button Content="Border selection" HorizontalAlignment="Left" Margin="824,47,0,0" VerticalAlignment="Top" Click="Button_Click"/>
         </Grid>
         <Border x:Name="ImageCanvas" Grid.Row="1" Background="Gray">
             <Image x:Name="gridPanel" Height="100" Width="100" MouseDown="GridMouseClick"/>
