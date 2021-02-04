@@ -34,14 +34,23 @@ namespace CellularAutomaton
                 for (int j = 0; j < _grid.GridContainer[i].Length; j++)
                 {
                     var cell = _grid.GridContainer[i][j];
-                    int width = (int)(cell.X * _cellSize);
-                    int height = (int)(cell.Y * _cellSize);
-                    Rectangle rectangle = Rectangle.FromLTRB(
-                        width,
-                        height,
-                        (int)(((double)(cell.X + 1.0) * _cellSize) - _cellPadding),
-                        (int)(((double)(cell.Y + 1.0) * _cellSize) - _cellPadding)
-                        );
+                    int left = (int)(cell.X * _cellSize);
+                    int top = (int)(cell.Y * _cellSize);
+
+                    int right = (int)(((double)(cell.X + 1.0) * _cellSize) - _cellPadding);
+                    int bottom  = (int)(((double)(cell.Y + 1.0) * _cellSize) - _cellPadding);
+
+                    if (left == right)
+                    {
+                        if (left > 1) left--;
+                        else right++;
+                    }
+                    if (top == bottom)
+                    {
+                        if (top > 1) top--;
+                        else bottom++;
+                    }
+                    Rectangle rectangle = Rectangle.FromLTRB(left,top,right,bottom);
 
                     var color = ShowBorders && cell.IsBorder ? Color.Black : cell.Color;
                     if (ShowBorders && cell.IsBorder)
@@ -88,6 +97,7 @@ namespace CellularAutomaton
         public void UpdateCell(Cell cell, bool exclude)
         {
             var currentCell = _grid.GridContainer[cell.X][cell.Y];
+            currentCell.DualPhaseProtected = false;
             if (cell.State == -1 && exclude)
             {
                 currentCell.State = 0;

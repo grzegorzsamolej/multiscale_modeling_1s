@@ -30,6 +30,8 @@ namespace CellularAutomaton
         public Color Color { get; set; }
         public bool StateChanged { get; set; }
         public bool IsBorder { get; set; }
+        public bool DualPhaseProtected { get; set; }
+        public int SubStructuralState { get; set; }
 
         public void SetState(int state)
         {

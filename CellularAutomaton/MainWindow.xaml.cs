@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,6 +17,9 @@ namespace CellularAutomaton
         private CancellationToken _token;
         private bool _isSimulationComplete;
         private bool _bordersCalculated;
+        private Processor _processor;
+        private int _dualPhaseState;
+        private Color _dualPhaseColor;
 
         public MainWindow()
         {
@@ -35,10 +40,15 @@ namespace CellularAutomaton
             generationRule.ItemsSource = Enum.GetValues(typeof(GenerationAlghorithm)).Cast<GenerationAlghorithm>();
             generationRule.SelectedIndex = 0;
 
+            secondPhaseMethod.ItemsSource = Enum.GetValues(typeof(SecondPhaseMethod)).Cast<SecondPhaseMethod>();
+            secondPhaseMethod.SelectedIndex = 0;
+
             showGrid.Checked += ShowGrid_Checked;
             showGrid.Unchecked += ShowGrid_Checked;
 
             borderSize.ValueChanged += borderSize_ValueChanged;
+
+            _processor = new Processor(_grid, _drawing, Dispatcher);
         }
 
         private void ShowGrid_Checked(object sender, RoutedEventArgs e)
@@ -49,6 +59,7 @@ namespace CellularAutomaton
         private void RefreshGrid(object sender, EventArgs e)
         {
             _isSimulationComplete = false;
+            _processor.Substructural = false;
             _bordersCalculated = false;
             _drawing.InvaildateGrid();
             DrawGrid(sender, e);
@@ -76,6 +87,40 @@ namespace CellularAutomaton
 
             var cell = _drawing.GetCellByPosition(x, y);
 
+            if (_isSimulationComplete && cell != null && e.LeftButton == MouseButtonState.Pressed)
+            {
+                int state = cell.State;
+                if (_dualPhaseState < 1)
+                {
+                    cell.State = ++_grid.ActiveCellsCount;
+                    cell.DualPhaseProtected = true;
+                    _dualPhaseState = cell.State;
+                    _dualPhaseColor = cell.Color;
+                    cell.DualPhaseProtected = true;
+                }
+                else
+                {
+                    cell.SetState(_dualPhaseState);
+                    cell.Color =_dualPhaseColor;
+                    cell.DualPhaseProtected = true;
+                }
+                for (int i = 0; i < _grid.XSize; i++)
+                {
+                    for (int j = 0; j < _grid.YSize; j++)
+                    {
+                        var checkCell = _grid.GridContainer[i][j];
+                        if (checkCell.State == state)
+                        {
+                            checkCell.SetState(cell.State);
+                            checkCell.Color = cell.Color;
+                            checkCell.DualPhaseProtected = true;
+                        }
+                    }
+                }
+                _drawing.DrawGrid();
+                return;
+            }
+
             if (cell != null)
             {
                 _drawing.UpdateCell(cell, e.RightButton == MouseButtonState.Pressed);
@@ -86,10 +131,15 @@ namespace CellularAutomaton
 
         private async void RunGeneration_Click(object sender, RoutedEventArgs e)
         {
-            if (_isSimulationComplete) 
+            if (_isSimulationComplete && (SecondPhaseMethod)secondPhaseMethod.SelectedItem == SecondPhaseMethod.DualPhase)
             {
-                return;
+                PrepareForDualPhase();
             }
+            else if (_isSimulationComplete && (SecondPhaseMethod)secondPhaseMethod.SelectedItem == SecondPhaseMethod.SubStructural)
+            {
+                PrepareForSubStructural();
+            }
+
             _isSimulationComplete = false;
             _bordersCalculated = false;
             var openBorder = openBorders.IsChecked == true;
@@ -105,16 +155,53 @@ namespace CellularAutomaton
 
             EnableControls(true);
             stopGeneration.IsEnabled = false;
+
+            if (!_token.IsCancellationRequested)
+            {
+                _isSimulationComplete = true;
+            }
+
             _source.Dispose();
             _source = new CancellationTokenSource();
-            _isSimulationComplete = true;
+
 
             if (showBorders.IsChecked == true)
             {
                 DrawBorders();
             }
-        }        
-        
+        }
+
+        private void PrepareForSubStructural()
+        {
+            for (int i = 0; i < _grid.XSize; i++)
+            {
+                for (int j = 0; j < _grid.YSize; j++)
+                {
+                    _grid.GridContainer[i][j].StateChanged = false;
+                }
+            }
+            _processor.Substructural = true;
+            _processor.SubStructuralRandomization(MaxStatesCount.Value.Value);
+            _drawing.DrawGrid();
+        }
+
+        private void PrepareForDualPhase()
+        {
+            _processor.Substructural = false;
+            for (int i = 0; i < _grid.XSize; i++)
+            {
+                for (int j = 0; j < _grid.YSize; j++)
+                {
+                    var checkCell = _grid.GridContainer[i][j];
+                    if (!checkCell.DualPhaseProtected && checkCell.State > -1)
+                    {
+                        checkCell.State = 0;
+                    }
+                }
+            }
+            _processor.RandomizeStates(MaxStatesCount.Value.Value);
+        }
+
         private void StopGeneration(object sender, RoutedEventArgs e)
         {
             if (_source != null)
@@ -139,8 +226,9 @@ namespace CellularAutomaton
 
         private void RunGeneration(GenerationAlghorithm alghorithm, bool openBorders, int mutationProbability, CancellationToken ct)
         {
-            var processor = new Processor(_grid, _drawing, Dispatcher, openBorders, mutationProbability);
-            processor.Generate(alghorithm, ct);
+            _processor.OpenBorders = openBorders;
+            _processor.MutationProbability = mutationProbability;
+            _processor.Generate(alghorithm, ct);
         }
 
         private async void DrawBorders()
@@ -161,34 +249,14 @@ namespace CellularAutomaton
             _drawing.DrawGrid();
         }
 
-        private void RandomizeStates(object sender, RoutedEventArgs e)
+        private void RandomizeStates_Click(object sender, RoutedEventArgs e)
         {
             _isSimulationComplete = false;
             _bordersCalculated = false;
             _drawing.InvaildateGrid();
             UpdateGridParameters();
 
-            var rnd = new Random();
-
-            var maxState = MaxStatesCount.Value.Value;
-
-            if (maxState > _grid.XSize * _grid.YSize)
-            {
-                maxState = _grid.XSize * _grid.YSize; 
-            }
-
-            int i = maxState;
-            while (i > 0)
-            {
-                var x = rnd.Next(0, _grid.XSize);
-                var y = rnd.Next(0, _grid.YSize);
-
-                if (_grid.GridContainer[x][y].State == 0)
-                {
-                    _grid.GridContainer[x][y].State = ++_grid.ActiveCellsCount;
-                    i--;
-                }
-            }
+            _processor.RandomizeStates(MaxStatesCount.Value.Value);
             _drawing.DrawGrid();
         }
 

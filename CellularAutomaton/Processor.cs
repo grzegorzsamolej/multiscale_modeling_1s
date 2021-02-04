@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Windows.Threading;
@@ -7,23 +8,100 @@ namespace CellularAutomaton
 {
     public class Processor
     {
+        public bool OpenBorders { get; set; }
+        public int MutationProbability = 50;
+        public bool Substructural { get; set; }
+
         private readonly Grid _grid;
         private readonly NeighbourSeeker _seeker;
         private readonly Drawing _drawing;
-        private readonly bool _openBorders;
-        private readonly Dispatcher _dispatcher;
-        private readonly int _mutationProbability = 50;
 
-        public Processor(Grid grid, Drawing drawing, Dispatcher dispatcher, bool openBorders, int mutationProbability)
+        private readonly Dispatcher _dispatcher;
+        
+
+        public Processor(Grid grid, Drawing drawing, Dispatcher dispatcher)
         {
             _grid = grid;
             _seeker = new NeighbourSeeker(_grid);
             _drawing = drawing;
-            _openBorders = openBorders;
             _dispatcher = dispatcher;
-            if (mutationProbability > 0 && mutationProbability < 100)
+        }
+
+        public void RandomizeStates(int maxStateCount)
+        {
+            var rnd = new Random();
+
+            List<Cell> allCells = new List<Cell>();
+
+            for (int m = 0; m < _grid.XSize; m++)
             {
-                _mutationProbability = mutationProbability;
+                for (int j = 0; j < _grid.YSize; j++)
+                {
+                    allCells.Add(_grid.GridContainer[m][j]);
+                }
+            }
+
+            var freeCells = allCells.Where(x => x.State == 0).Count();
+
+            if (maxStateCount > freeCells)
+            {
+                maxStateCount = freeCells;
+            }
+
+            int i = maxStateCount;
+            while (i > 0)
+            {
+                var x = rnd.Next(0, allCells.Count);
+                var cell = allCells[x];
+
+                if (cell.State == 0)
+                {
+                    cell.State = ++_grid.ActiveCellsCount;
+                    i--;
+                }
+            }
+        }
+
+        public void SubStructuralRandomization(int maxStateCount)
+        {
+            var rnd = new Random();
+
+            List<Cell> allCells = new List<Cell>();
+
+            for (int m = 0; m < _grid.XSize; m++)
+            {
+                for (int j = 0; j < _grid.YSize; j++)
+                {
+                    allCells.Add(_grid.GridContainer[m][j]);
+                }
+            }
+
+            var groups = allCells.Where(x => x.State > 0).GroupBy(g => g.State);
+
+            foreach (var group in groups.Where(x => x.Count() > 1))
+            {
+                var cellCount = group.Count();
+                var state = group.Key;
+
+                if (maxStateCount > cellCount)
+                {
+                    maxStateCount = cellCount;
+                }
+
+                int i = maxStateCount;
+                var tempGroup = group.ToList();
+                while (i > 0)
+                {
+                    var x = rnd.Next(0, cellCount);
+                    var cell = tempGroup[x];
+
+                    if (cell.State == state)
+                    {
+                        cell.State = ++_grid.ActiveCellsCount;
+                        cell.SubStructuralState = state;
+                        i--;
+                    }
+                }
             }
         }
 
@@ -63,57 +141,73 @@ namespace CellularAutomaton
                             return;
                         }
                         var cell = _grid.GridContainer[x][y];
-                        if (cell.State != 0)
+                        if (cell.State != 0 && !Substructural)
                         {
                             continue;
                         }
 
-                        var neighbours = _seeker.GetNeighbours(cell, _openBorders == true, SeekMethod.Rule1).Where(x => x.State > 0 && !x.StateChanged);
+                        var neighbours = _seeker.GetNeighbours(cell, OpenBorders, SeekMethod.Rule1, Substructural).Where(x => x.State > 0 && !x.StateChanged);
 
                         var color = neighbours.GroupBy(x => x.Color).OrderByDescending(o => o.Count()).FirstOrDefault();
 
                         if (color != null && color.Count() >= 5)
                         {
                             gridCompleted = false;
-                            _grid.GridContainer[x][y].Color = color.Key;
-                            _grid.GridContainer[x][y].SetState(color.First().State);
+                            cell.Color = color.Key;
+                            cell.SetState(color.First().State);
+                            if (Substructural)
+                            {
+                                cell.SubStructuralState = color.First().SubStructuralState;
+                            }
                             continue;
                         }
 
-                        neighbours = _seeker.GetNeighbours(cell, _openBorders == true, SeekMethod.Rule2).Where(x => x.State > 0 && !x.StateChanged);
+                        neighbours = _seeker.GetNeighbours(cell, OpenBorders, SeekMethod.Rule2, Substructural).Where(x => x.State > 0 && !x.StateChanged);
 
                         color = neighbours.GroupBy(x => x.Color).OrderByDescending(o => o.Count()).FirstOrDefault();
 
                         if (color != null && color.Count() >= 3)
                         {
                             gridCompleted = false;
-                            _grid.GridContainer[x][y].Color = color.Key;
-                            _grid.GridContainer[x][y].SetState(color.First().State);
+                            cell.Color = color.Key;
+                            cell.SetState(color.First().State);
+                            if (Substructural)
+                            {
+                                cell.SubStructuralState = color.First().SubStructuralState;
+                            }
                             continue;
                         }
 
-                        neighbours = _seeker.GetNeighbours(cell, _openBorders == true, SeekMethod.Rule3).Where(x => x.State > 0 && !x.StateChanged);
+                        neighbours = _seeker.GetNeighbours(cell, OpenBorders, SeekMethod.Rule3, Substructural).Where(x => x.State > 0 && !x.StateChanged);
 
                         color = neighbours.GroupBy(x => x.Color).OrderByDescending(o => o.Count()).FirstOrDefault();
 
                         if (color != null && color.Count() >= 3)
                         {
                             gridCompleted = false;
-                            _grid.GridContainer[x][y].Color = color.Key;
-                            _grid.GridContainer[x][y].SetState(color.First().State);
+                            cell.Color = color.Key;
+                            cell.SetState(color.First().State);
+                            if (Substructural)
+                            {
+                                cell.SubStructuralState = color.First().SubStructuralState;
+                            }
                             continue;
                         }
 
-                        neighbours = _seeker.GetNeighbours(cell, _openBorders == true, SeekMethod.Rule4).Where(x => x.State > 0 && !x.StateChanged);
+                        neighbours = _seeker.GetNeighbours(cell, OpenBorders, SeekMethod.Rule4, Substructural).Where(x => x.State > 0 && !x.StateChanged);
                         color = neighbours.GroupBy(x => x.Color).OrderByDescending(o => o.Count()).FirstOrDefault();
 
                         if (color != null)
                         {
-                            if (rnd.Next(100) < _mutationProbability)
+                            if (rnd.Next(100) < MutationProbability)
                             {
-                                _grid.GridContainer[x][y].Color = color.Key;
-                                _grid.GridContainer[x][y].SetState(color.First().State);
-                                
+                                cell.Color = color.Key;
+                                cell.SetState(color.First().State);
+                                if (Substructural)
+                                {
+                                    cell.SubStructuralState = color.First().SubStructuralState;
+                                }
+
                             }
                             gridCompleted = false;
                             continue;
@@ -153,19 +247,23 @@ namespace CellularAutomaton
                             return;
                         }
                         var cell = _grid.GridContainer[x][y];
-                        if (cell.State != 0)
+                        if (cell.State != 0 && !Substructural)
                         {
                             continue;
                         }
 
-                        var neighbours = _seeker.GetNeighbours(cell, _openBorders == true, rule).Where(x => x.State > 0 && !x.StateChanged);
+                        var neighbours = _seeker.GetNeighbours(cell, OpenBorders, rule, Substructural).Where(x => x.State > 0 && !x.StateChanged);
                         var color = neighbours.GroupBy(x => x.Color).OrderByDescending(o => o.Count()).FirstOrDefault();
 
                         if (color != null)
                         {
                             gridCompleted = false;
-                            _grid.GridContainer[x][y].Color = color.Key;
-                            _grid.GridContainer[x][y].SetState(color.First().State);
+                            cell.Color = color.Key;
+                            cell.SetState(color.First().State);
+                            if (Substructural)
+                            {
+                                cell.SubStructuralState = color.First().SubStructuralState;
+                            }
 
                         }
                     }
@@ -194,5 +292,11 @@ namespace CellularAutomaton
         MooreRule = 2,
         VonNeumanRule = 3,
         Rule3 = 4,
+    }
+
+    public enum SecondPhaseMethod
+    {
+        DualPhase = 1,
+        SubStructural = 2
     }
 }

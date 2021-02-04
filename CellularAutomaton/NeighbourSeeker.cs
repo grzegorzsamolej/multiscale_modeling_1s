@@ -12,17 +12,17 @@ namespace CellularAutomaton
             _grid = grid;
         }
 
-        public List<Cell> GetNeighbours(Cell cell, bool openBorder, SeekMethod method)
+        public List<Cell> GetNeighbours(Cell cell, bool openBorder, SeekMethod method, bool substructural)
         {
             switch (method)
             {
                 case SeekMethod.Rule1:
                 case SeekMethod.Rule4:
-                    return GetNeighboursUsingRule1(cell, openBorder);
+                    return GetNeighboursUsingRule1(cell, openBorder, substructural);
                 case SeekMethod.Rule2:
-                    return GetNeighboursUsingRule2(cell, openBorder);
+                    return GetNeighboursUsingRule2(cell, openBorder, substructural);
                 case SeekMethod.Rule3:
-                    return GetNeighboursUsingRule3(cell, openBorder);
+                    return GetNeighboursUsingRule3(cell, openBorder, substructural);
                 default:
                     throw new ArgumentException("Selected method doesn't exist");
             }
@@ -66,7 +66,7 @@ namespace CellularAutomaton
             return neighbours;
         }
 
-        private List<Cell> GetNeighboursUsingRule1(Cell cell, bool openBorder)
+        private List<Cell> GetNeighboursUsingRule1(Cell cell, bool openBorder, bool substructural)
         {
             List<Cell> neighbours = new List<Cell>();
 
@@ -77,11 +77,13 @@ namespace CellularAutomaton
                     if (i == 0 && j == 0)
                         continue;
                     int x, y, state;
+                    Cell currentCell;
                     if (openBorder)
                     {
                         x = (i + cell.X) >= 0 ? (i + cell.X) % (_grid.XSize) : (i + cell.X) + _grid.XSize;
                         y = (j + cell.Y) >= 0 ? (j + cell.Y) % (_grid.YSize) : (j + cell.Y) + _grid.YSize;
-                        state = _grid.GridContainer[x][y].State;
+                        currentCell = _grid.GridContainer[x][y];
+                        state = currentCell.State;
                     }
                     else
                     {
@@ -89,34 +91,49 @@ namespace CellularAutomaton
                         y = j + cell.Y;
 
                         if (x < 0 || y < 0 || x >= _grid.XSize || y >= _grid.YSize)
+                        {
                             state = 0;
+                        }
                         else
-                            state = _grid.GridContainer[x][y].State;
+                        {
+                            currentCell = _grid.GridContainer[x][y];
+                            state = currentCell.State;
+                        }
+                            
                     }
 
                     if (state > 0)
                     {
-                        neighbours.Add(_grid.GridContainer[x][y]);
+                        currentCell = _grid.GridContainer[x][y];
+
+                        if ((substructural && cell.State == currentCell.SubStructuralState) || (!currentCell.DualPhaseProtected && !substructural))
+                        {
+                            neighbours.Add(_grid.GridContainer[x][y]);
+                        }
                     }
-                        
                 }
             }
             return neighbours;
         }
 
-        private List<Cell> GetNeighboursUsingRule2(Cell cell, bool openBorder)
+        private bool CheckSubstructural(int subState, int currentState, bool check) 
+        {
+            return !check || subState == currentState;
+        }
+
+        private List<Cell> GetNeighboursUsingRule2(Cell cell, bool openBorder, bool substructural)
         {
             int[,] neighbourPairs = GetNeighbourPairs(SeekMethod.Rule2);
-            return GetNeighboursUsingRule2Or3(cell, neighbourPairs, openBorder);
+            return GetNeighboursUsingRule2Or3(cell, neighbourPairs, openBorder, substructural);
         }
 
-        private List<Cell> GetNeighboursUsingRule3(Cell cell, bool openBorder)
+        private List<Cell> GetNeighboursUsingRule3(Cell cell, bool openBorder, bool substructural)
         {
             int[,] neighbourPairs = GetNeighbourPairs(SeekMethod.Rule3);
-            return GetNeighboursUsingRule2Or3(cell, neighbourPairs, openBorder);
+            return GetNeighboursUsingRule2Or3(cell, neighbourPairs, openBorder, substructural);
         }
 
-        private List<Cell> GetNeighboursUsingRule2Or3(Cell cell, int[,] neighbourPairs, bool openBorder)
+        private List<Cell> GetNeighboursUsingRule2Or3(Cell cell, int[,] neighbourPairs, bool openBorder, bool substructural)
         {
             List<Cell> neighbours = new List<Cell>();
 
@@ -125,12 +142,14 @@ namespace CellularAutomaton
                 int xPair = neighbourPairs[i, 0];
                 int yPair = neighbourPairs[i, 1];
                 int x, y, state;
+                Cell currentCell;
 
                 if (openBorder)
                 {
                     x = (xPair + cell.X) >= 0 ? (xPair + cell.X) % (_grid.XSize) : _grid.XSize - 1;
                     y = (yPair + cell.Y) >= 0 ? (yPair + cell.Y) % (_grid.YSize) : _grid.YSize - 1;
-                    state = _grid.GridContainer[x][y].State;
+                    currentCell = _grid.GridContainer[x][y];
+                    state = currentCell.State;
                 }
                 else
                 {
@@ -138,12 +157,23 @@ namespace CellularAutomaton
                     y = yPair + cell.Y;
 
                     if (x < 0 || y < 0 || x >= _grid.XSize || y >= _grid.XSize)
-                        state = 0; //!!! For testing, should be 0 insted of -1
+                        state = 0;
                     else
-                        state = _grid.GridContainer[x][y].State;
+                    {
+                        currentCell = _grid.GridContainer[x][y];
+                        state = currentCell.State;
+                    }
                 }
+
                 if (state > 0)
-                    neighbours.Add(_grid.GridContainer[x][y]);
+                {
+                    currentCell = _grid.GridContainer[x][y];
+
+                    if ((substructural && cell.State == currentCell.SubStructuralState) || (!currentCell.DualPhaseProtected && !substructural))
+                    {
+                        neighbours.Add(_grid.GridContainer[x][y]);
+                    }
+                }    
             }
             return neighbours;
         }
