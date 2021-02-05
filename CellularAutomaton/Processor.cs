@@ -8,7 +8,7 @@ namespace CellularAutomaton
 {
     public class Processor
     {
-        public bool OpenBorders { get; set; }
+        public BoundaryConditions boundaryConditions { get; set; }
         public int MutationProbability = 50;
         public bool Substructural { get; set; }
 
@@ -146,7 +146,7 @@ namespace CellularAutomaton
                             continue;
                         }
 
-                        var neighbours = _seeker.GetNeighbours(cell, OpenBorders, SeekMethod.Rule1, Substructural).Where(x => x.State > 0 && !x.StateChanged);
+                        var neighbours = _seeker.GetNeighbours(cell, boundaryConditions, SeekMethod.Rule1, Substructural).Where(x => x.State > 0 && !x.StateChanged);
 
                         var color = neighbours.GroupBy(x => x.Color).OrderByDescending(o => o.Count()).FirstOrDefault();
 
@@ -162,7 +162,7 @@ namespace CellularAutomaton
                             continue;
                         }
 
-                        neighbours = _seeker.GetNeighbours(cell, OpenBorders, SeekMethod.Rule2, Substructural).Where(x => x.State > 0 && !x.StateChanged);
+                        neighbours = _seeker.GetNeighbours(cell, boundaryConditions, SeekMethod.Rule2, Substructural).Where(x => x.State > 0 && !x.StateChanged);
 
                         color = neighbours.GroupBy(x => x.Color).OrderByDescending(o => o.Count()).FirstOrDefault();
 
@@ -178,7 +178,7 @@ namespace CellularAutomaton
                             continue;
                         }
 
-                        neighbours = _seeker.GetNeighbours(cell, OpenBorders, SeekMethod.Rule3, Substructural).Where(x => x.State > 0 && !x.StateChanged);
+                        neighbours = _seeker.GetNeighbours(cell, boundaryConditions, SeekMethod.Rule3, Substructural).Where(x => x.State > 0 && !x.StateChanged);
 
                         color = neighbours.GroupBy(x => x.Color).OrderByDescending(o => o.Count()).FirstOrDefault();
 
@@ -194,7 +194,7 @@ namespace CellularAutomaton
                             continue;
                         }
 
-                        neighbours = _seeker.GetNeighbours(cell, OpenBorders, SeekMethod.Rule4, Substructural).Where(x => x.State > 0 && !x.StateChanged);
+                        neighbours = _seeker.GetNeighbours(cell, boundaryConditions, SeekMethod.Rule4, Substructural).Where(x => x.State > 0 && !x.StateChanged);
                         color = neighbours.GroupBy(x => x.Color).OrderByDescending(o => o.Count()).FirstOrDefault();
 
                         if (color != null)
@@ -252,7 +252,7 @@ namespace CellularAutomaton
                             continue;
                         }
 
-                        var neighbours = _seeker.GetNeighbours(cell, OpenBorders, rule, Substructural).Where(x => x.State > 0 && !x.StateChanged);
+                        var neighbours = _seeker.GetNeighbours(cell, boundaryConditions, rule, Substructural).Where(x => x.State > 0 && !x.StateChanged);
                         var color = neighbours.GroupBy(x => x.Color).OrderByDescending(o => o.Count()).FirstOrDefault();
 
                         if (color != null)
@@ -298,5 +298,11 @@ namespace CellularAutomaton
     {
         DualPhase = 1,
         SubStructural = 2
+    }
+
+    public enum BoundaryConditions
+    {
+        Absorbing = 1,
+        Periodic = 2
     }
 }

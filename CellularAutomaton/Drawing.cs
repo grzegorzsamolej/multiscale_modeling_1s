@@ -134,6 +134,16 @@ namespace CellularAutomaton
             return _grid.GridContainer[xValue][yValue];
         }
 
+        public System.Windows.Controls.Image GetImage()
+        {
+            return _drawingImage;
+        }
+
+        public double GetCellSize()
+        {
+            return _cellSize;
+        }
+
         private void DrawRectangle(Rectangle rectangle, Color color)
         {
             Brush brush;

@@ -12,23 +12,23 @@ namespace CellularAutomaton
             _grid = grid;
         }
 
-        public List<Cell> GetNeighbours(Cell cell, bool openBorder, SeekMethod method, bool substructural)
+        public List<Cell> GetNeighbours(Cell cell, BoundaryConditions boundaryConditions, SeekMethod method, bool substructural)
         {
             switch (method)
             {
                 case SeekMethod.Rule1:
                 case SeekMethod.Rule4:
-                    return GetNeighboursUsingRule1(cell, openBorder, substructural);
+                    return GetNeighboursUsingRule1(cell, boundaryConditions, substructural);
                 case SeekMethod.Rule2:
-                    return GetNeighboursUsingRule2(cell, openBorder, substructural);
+                    return GetNeighboursUsingRule2(cell, boundaryConditions, substructural);
                 case SeekMethod.Rule3:
-                    return GetNeighboursUsingRule3(cell, openBorder, substructural);
+                    return GetNeighboursUsingRule3(cell, boundaryConditions, substructural);
                 default:
                     throw new ArgumentException("Selected method doesn't exist");
             }
         }
 
-        public List<Cell> GetAllNeighboursInRadius(Cell cell, bool openBorder, int radius)
+        public List<Cell> GetAllNeighboursInRadius(Cell cell, BoundaryConditions boundaryConditions, int radius)
         {
             List<Cell> neighbours = new List<Cell>();
 
@@ -39,7 +39,7 @@ namespace CellularAutomaton
                     if (i == 0 && j == 0)
                         continue;
                     int x, y, state;
-                    if (openBorder)
+                    if (boundaryConditions == BoundaryConditions.Periodic)
                     {
                         x = (i + cell.X) >= 0 ? (i + cell.X) % (_grid.XSize) : (i + cell.X) + _grid.XSize;
                         y = (j + cell.Y) >= 0 ? (j + cell.Y) % (_grid.YSize) : (j + cell.Y) + _grid.YSize;
@@ -66,7 +66,7 @@ namespace CellularAutomaton
             return neighbours;
         }
 
-        private List<Cell> GetNeighboursUsingRule1(Cell cell, bool openBorder, bool substructural)
+        private List<Cell> GetNeighboursUsingRule1(Cell cell, BoundaryConditions boundaryConditions, bool substructural)
         {
             List<Cell> neighbours = new List<Cell>();
 
@@ -78,7 +78,7 @@ namespace CellularAutomaton
                         continue;
                     int x, y, state;
                     Cell currentCell;
-                    if (openBorder)
+                    if (boundaryConditions == BoundaryConditions.Periodic)
                     {
                         x = (i + cell.X) >= 0 ? (i + cell.X) % (_grid.XSize) : (i + cell.X) + _grid.XSize;
                         y = (j + cell.Y) >= 0 ? (j + cell.Y) % (_grid.YSize) : (j + cell.Y) + _grid.YSize;
@@ -116,24 +116,19 @@ namespace CellularAutomaton
             return neighbours;
         }
 
-        private bool CheckSubstructural(int subState, int currentState, bool check) 
-        {
-            return !check || subState == currentState;
-        }
-
-        private List<Cell> GetNeighboursUsingRule2(Cell cell, bool openBorder, bool substructural)
+        private List<Cell> GetNeighboursUsingRule2(Cell cell, BoundaryConditions boundaryConditions, bool substructural)
         {
             int[,] neighbourPairs = GetNeighbourPairs(SeekMethod.Rule2);
-            return GetNeighboursUsingRule2Or3(cell, neighbourPairs, openBorder, substructural);
+            return GetNeighboursUsingRule2Or3(cell, neighbourPairs, boundaryConditions, substructural);
         }
 
-        private List<Cell> GetNeighboursUsingRule3(Cell cell, bool openBorder, bool substructural)
+        private List<Cell> GetNeighboursUsingRule3(Cell cell, BoundaryConditions boundaryConditions, bool substructural)
         {
             int[,] neighbourPairs = GetNeighbourPairs(SeekMethod.Rule3);
-            return GetNeighboursUsingRule2Or3(cell, neighbourPairs, openBorder, substructural);
+            return GetNeighboursUsingRule2Or3(cell, neighbourPairs, boundaryConditions, substructural);
         }
 
-        private List<Cell> GetNeighboursUsingRule2Or3(Cell cell, int[,] neighbourPairs, bool openBorder, bool substructural)
+        private List<Cell> GetNeighboursUsingRule2Or3(Cell cell, int[,] neighbourPairs, BoundaryConditions boundaryConditions, bool substructural)
         {
             List<Cell> neighbours = new List<Cell>();
 
@@ -144,7 +139,7 @@ namespace CellularAutomaton
                 int x, y, state;
                 Cell currentCell;
 
-                if (openBorder)
+                if (boundaryConditions == BoundaryConditions.Periodic)
                 {
                     x = (xPair + cell.X) >= 0 ? (xPair + cell.X) % (_grid.XSize) : _grid.XSize - 1;
                     y = (yPair + cell.Y) >= 0 ? (yPair + cell.Y) % (_grid.YSize) : _grid.YSize - 1;
@@ -156,7 +151,7 @@ namespace CellularAutomaton
                     x = xPair + cell.X;
                     y = yPair + cell.Y;
 
-                    if (x < 0 || y < 0 || x >= _grid.XSize || y >= _grid.XSize)
+                    if (x < 0 || y < 0 || x >= _grid.XSize || y >= _grid.YSize)
                         state = 0;
                     else
                     {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,6 +22,7 @@ namespace CellularAutomaton
         private int _dualPhaseState;
         private Color _dualPhaseColor;
         private bool _borderSelection;
+        private SaveLoadHelper _saveLoadHelper;
 
         public MainWindow()
         {
@@ -44,6 +46,12 @@ namespace CellularAutomaton
             secondPhaseMethod.ItemsSource = Enum.GetValues(typeof(SecondPhaseMethod)).Cast<SecondPhaseMethod>();
             secondPhaseMethod.SelectedIndex = 0;
 
+            boundaryConditions.ItemsSource = Enum.GetValues(typeof(BoundaryConditions)).Cast<BoundaryConditions>();
+            boundaryConditions.SelectedIndex = 0;
+
+            inclusionShape.ItemsSource = Enum.GetValues(typeof(InclusionShape)).Cast<InclusionShape>();
+            inclusionShape.SelectedIndex = 0;
+
             showGrid.Checked += ShowGrid_Checked;
             showGrid.Unchecked += ShowGrid_Checked;
 
@@ -51,6 +59,7 @@ namespace CellularAutomaton
 
             _processor = new Processor(_grid, _drawing, Dispatcher);
             _advancedProcessor = new AdvancedProcessor(_grid);
+            _saveLoadHelper = new SaveLoadHelper(_grid, _drawing);
         }
 
         private void ShowGrid_Checked(object sender, RoutedEventArgs e)
@@ -93,7 +102,7 @@ namespace CellularAutomaton
             {
                 if (_borderSelection)
                 {
-                    _advancedProcessor.CalculateBorderForArea(cell, openBorders.IsChecked == true);
+                    _advancedProcessor.CalculateBorderForArea(cell, (BoundaryConditions)boundaryConditions.SelectedItem);
                     _bordersCalculated = true;
                     showBorders.IsChecked = true;
                     _drawing.DrawGrid();
@@ -154,7 +163,6 @@ namespace CellularAutomaton
 
             _isSimulationComplete = false;
             _bordersCalculated = false;
-            var openBorder = openBorders.IsChecked == true;
             var rule = (GenerationAlghorithm)generationRule.SelectedItem;
             var mutationProbabilityValue = mutationProbability.Value.Value;
             var brSize = borderSize.Value.Value;
@@ -163,7 +171,8 @@ namespace CellularAutomaton
             stopGeneration.IsEnabled = true;
 
             _token = _source.Token;
-            await Task.Run(() => RunGeneration(rule, openBorder, mutationProbabilityValue, _token), _token);
+            var boundConditions = (BoundaryConditions)boundaryConditions.SelectedItem;
+            await Task.Run(() => RunGeneration(rule, boundConditions, mutationProbabilityValue, _token), _token);
 
             EnableControls(true);
             stopGeneration.IsEnabled = false;
@@ -230,28 +239,34 @@ namespace CellularAutomaton
             MaxStatesCount.IsEnabled = enable;
             randomizeStatesBtn.IsEnabled = enable;
             cleanGrid.IsEnabled = enable;
-            openBorders.IsEnabled = enable;
+            boundaryConditions.IsEnabled = enable;
             generationRule.IsEnabled = enable;
             borderSize.IsEnabled = enable;
             showBorders.IsEnabled = enable;
+            mutationProbability.IsEnabled = enable;
+            secondPhaseMethod.IsEnabled = enable;
+            showBorders.IsEnabled = enable;
+            borderSize.IsEnabled = enable;
+            removeCellsExceptBorders.IsEnabled = enable;
+            borderSelection.IsEnabled = enable;
         }
 
-        private void RunGeneration(GenerationAlghorithm alghorithm, bool openBorders, int mutationProbability, CancellationToken ct)
+        private void RunGeneration(GenerationAlghorithm alghorithm, BoundaryConditions boundaryConditions, int mutationProbability, CancellationToken ct)
         {
-            _processor.OpenBorders = openBorders;
+            _processor.boundaryConditions = boundaryConditions;
             _processor.MutationProbability = mutationProbability;
             _processor.Generate(alghorithm, ct);
         }
 
         private async void DrawBorders()
         {
-            var openBorder = openBorders.IsChecked == true;
             var brSize = borderSize.Value.Value;
 
             EnableControls(false);
+            var boundConditions = (BoundaryConditions)boundaryConditions.SelectedItem;
 
             await Task.Run(() => {
-                _advancedProcessor.CalculateBorders(brSize, openBorder);
+                _advancedProcessor.CalculateBorders(brSize, boundConditions);
             });
 
             EnableControls(true);
@@ -300,6 +315,79 @@ namespace CellularAutomaton
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             _borderSelection = true;
+        }
+
+        private void removeCellsExceptBorders_Click(object sender, RoutedEventArgs e)
+        {
+            if (_isSimulationComplete)
+            {
+                if (!_isSimulationComplete)
+                {
+                    DrawBorders();
+                }
+                _drawing.ShowBorders = true;
+                showBorders.IsChecked = true;
+                _advancedProcessor.CleanAllCellsExceptBorders();
+                _drawing.DrawGrid();
+            }
+        }
+
+        private void generateInclusions_Click(object sender, RoutedEventArgs e)
+        {
+            if (_isSimulationComplete)
+            {
+                _advancedProcessor.CalculateBorders(1, (BoundaryConditions)boundaryConditions.SelectedItem);
+                _advancedProcessor.GenerateInclusions(inclusionCount.Value.Value, inclusionSize.Value.Value, (BoundaryConditions)boundaryConditions.SelectedItem, (InclusionShape)inclusionShape.SelectedItem, true);
+            }
+            else
+            {
+                _advancedProcessor.GenerateInclusions(inclusionCount.Value.Value, inclusionSize.Value.Value, (BoundaryConditions)boundaryConditions.SelectedItem, (InclusionShape)inclusionShape.SelectedItem, false);
+            }
+            _drawing.DrawGrid();
+        }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var filename = OpenDialog(new Microsoft.Win32.SaveFileDialog());
+            if (!string.IsNullOrEmpty(filename))
+            {
+                _saveLoadHelper.Save(filename);
+            }
+        }
+
+        private void MenuItem_Click_1(object sender, RoutedEventArgs e)
+        {
+            var filename = OpenDialog(new Microsoft.Win32.OpenFileDialog());
+            if (!string.IsNullOrEmpty(filename))
+            {
+                _saveLoadHelper.Load(filename);
+            }
+            if (Path.GetExtension(filename) == ".txt")
+            {
+                _isSimulationComplete = true;
+            }
+        }
+
+        private string OpenDialog(Microsoft.Win32.FileDialog dlg)
+        {
+            dlg.FileName = "save";
+            dlg.DefaultExt = ".bmp";
+            dlg.Filter = "Bitmap Image (.bmp)|*.bmp|Jpeg image (.jpg)|*.jpg|Text file (.txt)|*.txt";
+
+            bool? result = dlg.ShowDialog();
+
+            if (result == true)
+            {
+                return dlg.FileName;
+                
+            }
+
+            return string.Empty;
+        }
+
+        private void MenuItem_Click_2(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
         }
     }
 }
