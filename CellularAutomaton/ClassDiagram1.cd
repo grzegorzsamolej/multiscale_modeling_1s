@@ -1,0 +1,128 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="CellularAutomaton.AdvancedProcessor">
+    <Position X="3" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAEQAAAABAAAAAAAoAAAAAAAAAAAAAQAAAAAAQQAAA=</HashCode>
+      <FileName>AdvancedProcessor.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CellularAutomaton.App">
+    <Position X="15.5" Y="8" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>App.xaml.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CellularAutomaton.Cell">
+    <Position X="14.75" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAABAAAAAAAEAAAAAAACAAAAIAAAAAAAAAAxAAAYCA=</HashCode>
+      <FileName>Cell.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CellularAutomaton.ColorsHelper">
+    <Position X="14.25" Y="6.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAEAAAAAAAAAAAAAAAAAgAAAAAAAACAAAAAAAAAAAA=</HashCode>
+      <FileName>ColorsHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CellularAutomaton.Drawing">
+    <Position X="8.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AIAAQgAQASAAAABQgIQAAAAQCAAAAACCIEAAAAAIAQA=</HashCode>
+      <FileName>Drawing.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CellularAutomaton.Grid">
+    <Position X="6.5" Y="1" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAgABAAAAAAAAAAAAAAAAAAAAAAAKAAAABAAACAA=</HashCode>
+      <FileName>Grid.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CellularAutomaton.MainWindow" BaseTypeListCollapsed="true">
+    <Position X="0.5" Y="0.5" Width="1.5" />
+    <AssociationLine Name="_advancedProcessor" Type="CellularAutomaton.AdvancedProcessor">
+      <MemberNameLabel ManuallyPlaced="true" ManuallySized="true">
+        <Position X="-0.14" Y="0.06" Height="0.182" Width="1.159" />
+      </MemberNameLabel>
+    </AssociationLine>
+    <TypeIdentifier>
+      <HashCode>BAAAAgAACGIICAAEIZAgAkEAAAMEAQgCAUBooAAAAwA=</HashCode>
+      <FileName>MainWindow.xaml.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_advancedProcessor" />
+      <Field Name="_drawing" />
+      <Field Name="_grid" />
+      <Field Name="_processor" />
+      <Field Name="_saveLoadHelper" />
+      <Field Name="_source" />
+    </ShowAsAssociation>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="CellularAutomaton.NeighbourSeeker">
+    <Position X="13.5" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAEAAAAAAACIAAAAAAAAAAAAAEAAAAAAABBkA=</HashCode>
+      <FileName>NeighbourSeeker.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CellularAutomaton.Processor">
+    <Position X="6.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AEAAQAAEAAAAAQAgIoAAAAAAAAAAAAAAAABQBEAAAAA=</HashCode>
+      <FileName>Processor.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CellularAutomaton.SaveLoadHelper">
+    <Position X="4.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgJAAAAAAAAAAAIAAAQAAAACQAAAABABAAAAAgAA=</HashCode>
+      <FileName>SaveLoadHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="System.Threading.CancellationTokenSource" Collapsed="true">
+    <Position X="3" Y="0.75" Width="1.5" />
+    <TypeIdentifier />
+    <Lollipop Position="0.2" />
+  </Class>
+  <Enum Name="CellularAutomaton.InclusionShape">
+    <Position X="13.75" Y="8.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAgAAAAAAA=</HashCode>
+      <FileName>AdvancedProcessor.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="CellularAutomaton.SeekMethod">
+    <Position X="12.25" Y="9.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEAAAAAAACAAAAAACAAAAAEAAAAAA=</HashCode>
+      <FileName>NeighbourSeeker.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="CellularAutomaton.GenerationAlghorithm">
+    <Position X="15.5" Y="9.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAABAAAAAAAAAAAAAQAAAAAAACAAAAAAAAAgAA=</HashCode>
+      <FileName>Processor.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="CellularAutomaton.SecondPhaseMethod">
+    <Position X="15.5" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAABAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Processor.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="CellularAutomaton.BoundaryConditions">
+    <Position X="13.75" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAgAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Processor.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
